@@ -143,21 +143,42 @@ export class ModelInterface {
 
 ### Core Components
 
-1. **FileSystemTools**
-   - Handles file and directory operations
-   - Provides unified interface for file content retrieval
-   - Implements error handling for file operations
+1. **Server (server.ts)**
+   - Express.js REST API implementation
+   - File upload/delete handling with multer
+   - Request validation and routing
+   - OpenAPI/Swagger integration
 
-2. **ModelInterface**
-   - Manages LLM provider interactions
-   - Handles response formatting
-   - Implements error handling for API calls
+2. **FileSystemTools (core/fileSystem.ts)**
+   - File and directory operations
+   - Content reading and parsing
+   - Directory traversal
+   - Secure file deletion
+   - Error handling for file operations
 
-3. **Utility Modules**
-   - `fileUtils`: File type detection and path sanitization
-   - `promptUtils`: Context formatting and truncation
-   - `validators`: Input validation
-   - `logger`: Application logging
+3. **ModelInterface (core/modelInterface.ts)**
+   - Multiple LLM provider support (Ollama, Together.ai)
+   - Response formatting and error handling
+   - Configurable model parameters
+   - Unified query interface
+
+4. **Utility Modules**
+   - `fileUtils`: File type detection, path sanitization, size formatting
+   - `promptUtils`: Context formatting, intelligent truncation
+   - `validators`: Path, query, and model validation
+   - `logger`: Structured logging with levels
+
+5. **Configuration (config/config.ts)**
+   - Environment variable management
+   - API keys and endpoints
+   - Model configuration
+   - Server settings
+
+6. **API Specification (resources/file-context-api.yml)**
+   - OpenAPI 3.0 documentation
+   - Request/response schemas
+   - Endpoint documentation
+   - Error response definitions
 
 ## API Endpoints
 
@@ -166,9 +187,39 @@ export class ModelInterface {
 GET /api/files
 Query params:
   - path: string (optional, defaults to './')
+Response:
+  - Array of FileInfo objects with file/directory details
 ```
 
-### 2. Query with Context
+### 2. Upload File
+```
+POST /api/files/upload
+Content-Type: multipart/form-data
+Body:
+  - file: File (must be a text file, max 5MB)
+Response:
+{
+  "message": "File uploaded successfully",
+  "file": {
+    "name": string,
+    "size": string,
+    "path": string
+  }
+}
+```
+
+### 3. Delete File
+```
+DELETE /api/files/{filename}
+Params:
+  - filename: string (name of file to delete)
+Response:
+{
+  "message": "File deleted successfully"
+}
+```
+
+### 4. Query with Context
 ```
 POST /api/query
 Body:
@@ -176,6 +227,12 @@ Body:
   "path": string,
   "query": string,
   "model": "ollama" | "together"
+}
+Response:
+{
+  "text": string,
+  "model": string,
+  "error?: string
 }
 ```
 
@@ -210,6 +267,8 @@ npm start
    - Request received → Path validation → File reading → Content extraction
    - Directory handling includes recursive file reading
    - Content filtering based on file type
+   - File uploads are validated for type and size
+   - Secure file deletion with path validation
 
 2. **Context Processing**
    - File contents are aggregated
@@ -229,10 +288,33 @@ npm start
    - Path validation and normalization
    - Safe file type checking
 
-2. **Input Validation**
+2. **File Upload Security**
+   - File type validation
+   - File size limits (5MB max)
+   - Secure file storage
+   - Safe file deletion
+
+3. **Input Validation**
    - Query content validation
    - Model type verification
    - Path structure verification
+   - File content validation
+
+## Supported File Types
+
+The application supports the following text-based file types:
+- Documentation: `.txt`, `.md`
+- Code files: `.js`, `.ts`, `.jsx`, `.tsx`, `.py`, `.java`, `.cpp`, `.c`, `.h`
+- Configuration: `.json`, `.yaml`, `.yml`, `.env`
+- Web files: `.html`, `.css`
+- Data files: `.csv`, `.xml`, `.log`
+
+File type validation is enforced during:
+- File uploads
+- Context processing
+- File reading operations
+
+Maximum file size: 5MB per file
 
 ## Error Handling
 
@@ -241,6 +323,7 @@ The application implements comprehensive error handling:
 - API response errors
 - Invalid input errors
 - Model-specific errors
+- File upload/deletion errors
 
 ## Development
 
@@ -248,11 +331,26 @@ The application implements comprehensive error handling:
 ```
 file-context-mcp/
 ├── src/
-│   ├── core/          # Core functionality
-│   ├── utils/         # Utility functions
-│   └── config/        # Configuration
-├── storage/           # Test files directory
-└── dist/             # Compiled output
+│   ├── server.ts              # Main application server
+│   ├── core/                  # Core functionality
+│   │   ├── fileSystem.ts      # File operations handling
+│   │   └── modelInterface.ts  # LLM provider integrations
+│   ├── utils/                 # Utility functions
+│   │   ├── fileUtils.ts       # File type & path utilities
+│   │   ├── promptUtils.ts     # Prompt formatting
+│   │   ├── validators.ts      # Input validation
+│   │   └── logger.ts         # Application logging
+│   ├── config/               # Configuration
+│   │   └── config.ts        # Environment & app config
+│   └── resources/           # API specifications
+│       └── file-context-api.yml  # OpenAPI spec
+├── storage/                 # File storage directory
+│   ├── code-samples/       # Example code files
+│   └── notes/             # Documentation & notes
+├── postman/               # API testing
+│   └── File-Context-MCP.postman_collection.json  # Postman collection
+├── dist/                  # Compiled output
+└── node_modules/         # Dependencies
 ```
 
 ### Adding New Features
@@ -266,9 +364,70 @@ file-context-mcp/
    - Implement provider-specific error handling
 
 ## Testing
+
+### Postman Collection
+The project includes a Postman collection (`postman/File-Context-MCP.postman_collection.json`) for testing all API endpoints. To use it:
+
+1. **Import the Collection**
+   - Open Postman
+   - Click "Import" button
+   - Select or drag the `File-Context-MCP.postman_collection.json` file
+
+2. **Available Requests**
+   ```
+   File-Context-MCP
+   ├── List files
+   │   └── GET http://localhost:3001/api/files?path=./storage
+   ├── Query
+   │   └── POST http://localhost:3001/api/query (single file analysis)
+   ├── Analyze multiple files
+   │   └── POST http://localhost:3001/api/query (directory analysis)
+   └── File Upload
+       └── POST http://localhost:3001/api/files/upload
+   ```
+
+3. **Testing File Operations**
+   - **List Files**: View contents of the storage directory
+   - **Upload File**: Use form-data with key "file" and select a text file
+   - **Query File**: Analyze single file contents with LLM
+   - **Analyze Directory**: Process multiple files with LLM
+
+4. **Example Queries**
+   ```json
+   // Single file analysis
+   {
+       "path": "./storage/code-samples/example.ts",
+       "query": "Explain what this TypeScript code does",
+       "model": "ollama"
+   }
+
+   // Directory analysis
+   {
+       "path": "./storage",
+       "query": "What types of files are in this directory and summarize their contents?",
+       "model": "ollama"
+   }
+   ```
+
+5. **File Upload Guide**
+   - Use the "File Upload" request
+   - Select "form-data" in the Body tab
+   - Add key "file" with type "File"
+   - Choose a supported text file (see Supported File Types)
+   - Maximum file size: 5MB
+
+### Manual Testing
 - Use the provided test files in `/storage`
 - Test different file types and queries
 - Verify model responses and error handling
+- Test file size limits and type restrictions
+
+### Environment Setup
+Make sure to:
+- Have the server running (`npm run dev`)
+- Configure environment variables
+- Have Ollama running locally (for Ollama model)
+- Set Together.ai API key (for Together model)
 
 ## Future Considerations
 1. How to handle large files efficiently
@@ -278,3 +437,4 @@ file-context-mcp/
 5. Implementing rate limiting and caching
 
 This project demonstrates modern TypeScript/Node.js practices with a focus on modularity, type safety, and error handling while providing a flexible interface for LLM interactions with file-based context.
+

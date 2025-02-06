@@ -52,4 +52,16 @@ export class FileSystemTools {
       return [await this.readFile(targetPath)];
     }
   }
+
+  async deleteFile(filePath: string): Promise<void> {
+    try {
+      const stat = await fs.stat(filePath);
+      if (!stat.isFile()) {
+        throw new Error('Path is not a file');
+      }
+      await fs.unlink(filePath);
+    } catch (error) {
+      throw new Error(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }

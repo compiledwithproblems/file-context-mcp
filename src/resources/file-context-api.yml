@@ -1,0 +1,159 @@
+openapi: 3.0.0
+info:
+  title: File Context API
+  version: 1.0.0
+  description: API for managing files and querying LLMs with file context
+
+paths:
+  /api/files:
+    get:
+      summary: Get files in directory
+      parameters:
+        - name: path
+          in: query
+          schema:
+            type: string
+          description: Directory path to list
+      responses:
+        '200':
+          description: List of files and directories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileInfo'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /api/files/upload:
+    post:
+      summary: Upload a file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  file:
+                    $ref: '#/components/schemas/UploadedFile'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /api/files/{filename}:
+    delete:
+      summary: Delete a file
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Name of the file to delete
+      responses:
+        '200':
+          description: File deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /api/query:
+    post:
+      summary: Query LLM with file context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+                - query
+              properties:
+                path:
+                  type: string
+                  description: Path to file or directory for context
+                query:
+                  type: string
+                  description: Query to ask the LLM
+                model:
+                  type: string
+                  enum: [ollama, together]
+                  default: ollama
+                  description: LLM model to use
+      responses:
+        '200':
+          description: LLM response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMResponse'
+        '500':
+          $ref: '#/components/responses/Error'
+
+components:
+  schemas:
+    FileInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        path:
+          type: string
+        type:
+          type: string
+          enum: [file, directory]
+        content:
+          type: string
+          description: Optional file content
+
+    UploadedFile:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: string
+        path:
+          type: string
+
+    LLMResponse:
+      type: object
+      properties:
+        text:
+          type: string
+        model:
+          type: string
+        error:
+          type: string
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
