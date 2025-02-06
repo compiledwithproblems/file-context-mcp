@@ -1,0 +1,6 @@
+This is a sample text file.
+It contains multiple lines of text
+that we can use for testing our context-aware LLM queries.
+
+The purpose of this file is to demonstrate
+how our system handles plain text files.
