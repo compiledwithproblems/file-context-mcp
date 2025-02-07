@@ -1,5 +1,7 @@
 # File Context MCP (Model Context Processor)
 
+[![smithery badge](https://smithery.ai/badge/@compiledwithproblems/file-context-mcp)](https://smithery.ai/server/@compiledwithproblems/file-context-mcp)
+
 ## Overview
 File Context MCP is a TypeScript-based application that provides an API for querying Large Language Models (LLMs) with context from local files. It supports multiple LLM providers (Ollama and Together.ai) and can process various file types to generate context-aware responses.
 
@@ -251,6 +253,14 @@ PORT=3001
 npm install
 ```
 
+### Installing via Smithery
+
+To install File Context MCP for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@compiledwithproblems/file-context-mcp):
+
+```bash
+npx @smithery/cli@latest install @compiledwithproblems/file-context-mcp --client claude
+```
+
 3. **Running the Application**
 ```bash
 # Development
@@ -437,4 +447,3 @@ Make sure to:
 5. Implementing rate limiting and caching
 
 This project demonstrates modern TypeScript/Node.js practices with a focus on modularity, type safety, and error handling while providing a flexible interface for LLM interactions with file-based context.
-
