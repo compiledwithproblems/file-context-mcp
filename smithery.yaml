@@ -1,0 +1,29 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - togetherApiKey
+      - ollamaBaseUrl
+      - modelName
+      - port
+    properties:
+      togetherApiKey:
+        type: string
+        description: The API key for Together.ai.
+      ollamaBaseUrl:
+        type: string
+        description: The base URL for the Ollama model service.
+      modelName:
+        type: string
+        description: The name of the model to use with the LLM.
+      port:
+        type: number
+        description: The port number on which the server will run.
+  commandFunction:
+    # A function that produces the CLI command to start the MCP on stdio.
+    |-
+    (config) => ({ command: 'node', args: ['dist/server.js'], env: { TOGETHER_API_KEY: config.togetherApiKey, OLLAMA_BASE_URL: config.ollamaBaseUrl, MODEL_NAME: config.modelName, PORT: config.port.toString() } })
